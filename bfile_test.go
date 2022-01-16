@@ -38,8 +38,11 @@ func TestFile(t *testing.T) {
 	// random data.
 	defer os.Remove("test.dat")
 	data := makeRandom(123456789)
-	f, err := Create("test.dat", int64(len(data)), 0)
+	f, err := Create("test.dat")
 	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Truncate(int64(len(data))); err != nil {
 		t.Fatal(err)
 	}
 	fsize := f.Size()
@@ -71,7 +74,7 @@ func TestFile(t *testing.T) {
 	if err := f.Close(); err != nil {
 		t.Fatal(err)
 	}
-	f, err = Open("test.dat", 0)
+	f, err = Open("test.dat")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,11 +119,14 @@ func TestFile(t *testing.T) {
 func TestThreads(t *testing.T) {
 	defer os.Remove("test.dat")
 	fsize := int64(10_000_000)
-	f, err := Create("test.dat", fsize, 0)
+	f, err := Create("test.dat")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer f.Close()
+	if err := f.Truncate(fsize); err != nil {
+		t.Fatal(err)
+	}
 	var wg sync.WaitGroup
 	nprocs := 100
 	for i := 0; i < nprocs; i++ {
@@ -129,7 +135,6 @@ func TestThreads(t *testing.T) {
 			defer wg.Done()
 			for i := 0; i < 1000; i++ {
 				data := makeRandom(int(randSize()))
-
 				off := int64(rand.Int()) & fsize
 				var n int
 				var err error
@@ -191,9 +196,12 @@ func TestWritePerf(t *testing.T) {
 	t.Run("bfile", func(t *testing.T) {
 		os.Remove("hello.dat")
 		start := time.Now()
-		f, err := Create("hello.dat", int64(N), 0)
+		f, err := Create("hello.dat")
 		if err != nil {
-			t.Fatal(f)
+			t.Fatal(err)
+		}
+		if err := f.Truncate(int64(N)); err != nil {
+			t.Fatal(err)
 		}
 		w := bufio.NewWriterSize(f, 8192)
 		var n int

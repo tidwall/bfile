@@ -3,6 +3,7 @@ package bfile
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"math"
 	"os"
 	"sync"
@@ -10,10 +11,11 @@ import (
 )
 
 const (
-	pageSize      = 8192 // all pages are this size
-	minPages      = 4    // minimum total pages per file
-	pagesPerShard = 32   // ideal number of pages per shard
-	maxShards     = 128  // maximum number of shards per file
+	pageSize          = 8192     // all pages are this size
+	minPages          = 4        // minimum total pages per file
+	pagesPerShard     = 32       // ideal number of pages per shard
+	maxShards         = 128      // maximum number of shards per file
+	defaultBufferSize = 0x800000 // default max buffer size, 8 MB
 )
 
 type File struct {
@@ -62,34 +64,29 @@ func (s *shard) bump(p *page) {
 	s.push(p)
 }
 
-// Create a new file for reading and writing.
-// The new file will be resized to the provide fileSize.
-// If the file already exists, it is overwritten.
-// The bufferSize is the maximum amount of memory used for page buffers.
-// Setting bufferSize to zero will use the default of 32 KB.
-func Create(path string, fileSize, bufferSize int64) (*File, error) {
-	if bufferSize < 0 || fileSize < 0 {
-		return nil, os.ErrInvalid
-	}
-	file, err := os.Create(path)
-	if err != nil {
-		return nil, err
-	}
-	if err := file.Truncate(fileSize); err != nil {
-		file.Close()
-		return nil, err
-	}
-	return newFile(file, fileSize, bufferSize)
+func Create(name string) (*File, error) {
+	return OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 }
 
-// Open an existing file for reading and writing.
-// The bufferSize is the maximum amount of memory used for page buffers.
-// Setting bufferSize to zero will use the default of 32 KB.
-func Open(path string, bufferSize int64) (*File, error) {
-	if bufferSize < 0 {
-		return nil, os.ErrInvalid
+func Open(name string) (*File, error) {
+	return OpenFile(name, os.O_RDONLY, 0)
+}
+
+// OpenFile works like the builtin os.OpenFile.
+// Uses a default buffer size of 8 MB.
+// To choose your own buffer size use OpenFileSize
+func OpenFile(name string, flag int, perm fs.FileMode) (*File, error) {
+	return OpenFileSize(name, flag, perm, 0)
+}
+
+// OpenFile works like the builtin os.OpenFile.
+// Uses a default buffer size of 8 MB.
+// To choose your own buffer size use OpenFileSize
+func OpenFileSize(name string, flag int, perm fs.FileMode, bufferSize int64) (*File, error) {
+	if bufferSize <= 0 {
+		bufferSize = defaultBufferSize
 	}
-	file, err := os.OpenFile(path, os.O_RDWR, 0666)
+	file, err := os.OpenFile(name, flag, perm)
 	if err != nil {
 		return nil, err
 	}
@@ -407,6 +404,7 @@ func (f *File) Pages() int64 {
 	}
 	return n
 }
+
 func (f *File) Chmod(mode os.FileMode) error {
 	return f.bfile.file.Chmod(mode)
 }
@@ -418,4 +416,15 @@ func (f *File) Chown(uid, gid int) error {
 // Name returns the name of the file as presented to Open.
 func (f *File) Name() string {
 	return f.bfile.file.Name()
+}
+
+// Truncate resizes the file
+func (f *File) Truncate(size int64) error {
+	f.bfile.mu.Lock()
+	defer f.bfile.mu.Unlock()
+	if err := f.bfile.file.Truncate(size); err != nil {
+		return err
+	}
+	f.bfile.size = size
+	return nil
 }
