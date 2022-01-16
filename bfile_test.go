@@ -42,14 +42,7 @@ func TestFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := f.Truncate(int64(len(data))); err != nil {
-		t.Fatal(err)
-	}
-	fsize := f.Size()
-	if fsize != int64(len(data)) {
-		t.Fatalf("expected %d got %d", int64(len(data)), fsize)
-	}
-
+	fsize := int64(len(data))
 	var off int64
 	for off < fsize {
 		bsize := randSize()
@@ -124,9 +117,9 @@ func TestThreads(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	if err := f.Truncate(fsize); err != nil {
-		t.Fatal(err)
-	}
+	// if err := f.Truncate(fsize); err != nil {
+	// 	t.Fatal(err)
+	// }
 	var wg sync.WaitGroup
 	nprocs := 100
 	for i := 0; i < nprocs; i++ {
@@ -165,6 +158,9 @@ func TestWritePerf(t *testing.T) {
 		f, err := os.Create("hello.dat")
 		if err != nil {
 			t.Fatal(f)
+		}
+		if err := f.Truncate(int64(N)); err != nil {
+			t.Fatal(err)
 		}
 		w := bufio.NewWriterSize(f, 8192)
 		var n int

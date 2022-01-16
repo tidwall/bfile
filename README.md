@@ -16,26 +16,23 @@ go get github.com/tidwall/bfile
 
 ## Usage
 
-There are two functions to open or create a file:
+Has the normal file opening functions:
 
 ```go
-func Create(path string, fileSize int64, bufferSize int64) (*File, error)
-func Open(path string, bufferSize int64) (*File, error)
+func Create(name string) (*File, error)
+func Open(name string) (*File, error)
+func OpenFile(name string, flat int, perm fs.FileMode) (*File, error)
 ```
 
-The `Create` function will create or replace a file for reading and writing and resize the file to `fileSize`.  
-The `Open` function will open an existing file for reading and writing.  
-The `bufferSize` param tells the underlying file to use no more than that much memory for maintaining buffers.
+The resulting file works a lot like a standard `os.File`, but with an 
+automatically maintained pool of buffered page. The default size of all
+buffered pages will not exceed 8 MB. 
 
-The resulting file works a lot like a standard `os.File` and includes most of
-the same methods.
-
-The main difference is that the size of the file is capped when `Open` or `Create` is called.
-Reading or writing beyond the file size will return an `io.EOF` error.
+For custom size buffers use the `OpenFileSize`.
 
 **All operations are thread-safe.**
 
-Other important methods:
+Other important functions:
 
 ```go
 func (*File) WriteAt([]byte, int64) (int, error) // random writes
@@ -46,10 +43,14 @@ func (*File) Flush() error                       // flush buffer data
 func (*File) Sync() error                        // flush and sync data to stable storage
 func (*File) Close() error                       // close the file
 func (*File) Clone() error                       // create a shallow copy
+func (*File) Truncate(int64) error               // resize the file
+func (*File) Stat() os.FileInfo                  // file size and other info
 ```
 
-The `Clone` method will create a shallow copy of `File`, which shares the same
+The `Clone` function will create a shallow copy of `File`, which shares the same
 in memory pages as all other clones. 
+
+The `Close` function will always flush and sync your data prior to returning.
 
 ## Contact
 

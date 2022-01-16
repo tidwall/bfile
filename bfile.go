@@ -230,16 +230,30 @@ func (f *bfile) io(b []byte, off int64, write bool) (n int, err error) {
 	start, end := off, off+int64(len(b))
 	if start < 0 {
 		return 0, fmt.Errorf("negative offset")
-	} else if end > f.size {
-		end = f.size
-		if end-start < 0 {
-			end = start
-		}
-		eof = true
 	}
-	b = b[:end-start]
 	f.mu.RLock()
 	defer f.mu.RUnlock()
+
+	if end > f.size {
+		if write {
+			// must inrease file size
+			// swap the locks, check again, change the size
+			f.mu.RUnlock()
+			f.mu.Lock()
+			if end > f.size {
+				f.size = end
+			}
+			f.mu.Unlock()
+			f.mu.RLock()
+		} else {
+			end = f.size
+			if end-start < 0 {
+				end = start
+			}
+			eof = true
+		}
+	}
+	b = b[:end-start]
 	if f.closed {
 		return 0, os.ErrClosed
 	}
@@ -327,11 +341,6 @@ func (f *bfile) pio(b []byte, pnum, pstart, pend int64, write bool,
 // data has been fully written to stable storage.
 func (f *File) Close() error {
 	return f.bfile.Close()
-}
-
-// Size returns the size of the file
-func (f *File) Size() int64 {
-	return f.bfile.size
 }
 
 // WriteAt writes len(b) bytes to the File starting at byte offset off.
