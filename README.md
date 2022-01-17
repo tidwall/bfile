@@ -42,7 +42,7 @@ func (*File) Write([]byte) (int, error)          // sequential writes
 func (*File) Flush() error                       // flush buffer data
 func (*File) Sync() error                        // flush and sync data to stable storage
 func (*File) Close() error                       // close the file
-func (*File) Clone() error                       // create a shallow copy
+func (*File) Clone() *File                       // create a shallow copy
 func (*File) Truncate(int64) error               // resize the file
 func (*File) Stat() os.FileInfo                  // file size and other info
 ```
