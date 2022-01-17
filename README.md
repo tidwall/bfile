@@ -25,7 +25,7 @@ func OpenFile(name string, flat int, perm fs.FileMode) (*File, error)
 ```
 
 The resulting file works a lot like a standard `os.File`, but with an 
-automatically maintained pool of buffered page. The default size of all
+automatically maintained pool of buffered pages. The default size of all
 buffered pages will not exceed 8 MB. 
 
 For custom size buffers use the `OpenFileSize`.
