@@ -1,6 +1,6 @@
-# bfile
+# bio
 
-[![GoDoc](https://godoc.org/github.com/tidwall/bfile?status.svg)](https://godoc.org/github.com/tidwall/bfile)
+[![GoDoc](https://godoc.org/github.com/tidwall/bio?status.svg)](https://godoc.org/github.com/tidwall/bio)
 
 A buffer pool file I/O library for Go.
 
@@ -11,46 +11,61 @@ This is an alternative to using `mmap` on large DBMS like files.
 ## Install
 
 ```
-go get github.com/tidwall/bfile
+go get github.com/tidwall/bio
 ```
 
 ## Usage
 
-Has the normal file opening functions:
+Use the `NewPager` function to create a new `Pager`, which includes three
+functions: `ReadAt`, `WriteAt`, and `Flush`.
+The Pager reading and writing works like an `os.File`, but with an 
+automatically maintained pool of buffered pages.
 
 ```go
-func Create(name string) (*File, error)
-func Open(name string) (*File, error)
-func OpenFile(name string, flat int, perm fs.FileMode) (*File, error)
+// Open a file for read/write
+f, err := os.OpenFile("bigfile.dat", os.O_RDWR, 0)
+
+// Create a new Pager for accessing the data in opened file.
+p := bio.NewPager(f)
+
+// Read some data at a specific offset.
+data := make([]byte, 50)
+n, err := p.ReadAt(data, 827364)
+
+// Write some data at the same offset.
+n, err := p.WriteAt([]byte("hello"), c)
+
+// Flush unwritten data to the underlying os.File
+err = p.Flush()
 ```
 
-The resulting file works a lot like a standard `os.File`, but with an 
-automatically maintained pool of buffered pages. The default size of all
-buffered pages will not exceed 8 MB. 
+There's also a `Stream` object for sequentially reading and writing data, which
+includes the three functions: `Read`, `Write`, and `Flush`.
 
-For custom size buffers use the `OpenFileSize`.
+```go
+
+// Create a new Pager
+p := bio.NewPager(f)
+
+// Create a Stream that is backed by the Pager starting at a specific offset
+s := p.Stream(827364)
+
+// Read 50 bytes data at the offset 827364.
+data := make([]byte, 50)
+n, err := s.Read(data)
+
+// Write the string "hello" at 827414, which is after the previous read.
+n, err := s.Write([]byte("hello"))
+
+// Flush unwritten data to the underlying os.File
+err = p.Flush()
+```
+
+The default page size is 4096 and the default size of all buffered pages will 
+not exceed 8 MB.
+These defaults can be changed by using the `NewPagerSize` function.
 
 **All operations are thread-safe.**
-
-Other important functions:
-
-```go
-func (*File) WriteAt([]byte, int64) (int, error) // random writes
-func (*File) ReadAt([]byte, int64) (int, error)  // random reads
-func (*File) Read([]byte) (int, error)           // sequential reads
-func (*File) Write([]byte) (int, error)          // sequential writes
-func (*File) Flush() error                       // flush buffer data
-func (*File) Sync() error                        // flush and sync data to stable storage
-func (*File) Close() error                       // close the file
-func (*File) Clone() *File                       // create a shallow copy
-func (*File) Truncate(int64) error               // resize the file
-func (*File) Stat() os.FileInfo                  // file size and other info
-```
-
-The `Clone` function will create a shallow copy of `File`, which shares the same
-in memory pages as all other clones. 
-
-The `Close` function will always flush and sync your data prior to returning.
 
 ## Contact
 

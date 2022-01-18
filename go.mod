@@ -1,3 +1,3 @@
-module github.com/tidwall/bfile
+module github.com/tidwall/bio
 
 go 1.17
