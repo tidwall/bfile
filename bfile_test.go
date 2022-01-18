@@ -1,4 +1,4 @@
-package bio
+package bfile
 
 import (
 	"bufio"
@@ -188,13 +188,13 @@ func TestWritePerf(t *testing.T) {
 			t.Fatal(err)
 		}
 		elapsed := time.Since(start)
-		fmt.Printf("%-20s  %d MB in %d ms, %d MB/s\n",
+		fmt.Printf("%s %d MB in %d ms, %d MB/s\n",
 			t.Name(),
 			N/1024/1024, elapsed.Milliseconds(),
 			int(float64(N)/elapsed.Seconds()/1024/1024),
 		)
 	})
-	t.Run("bio", func(t *testing.T) {
+	t.Run("bfile", func(t *testing.T) {
 		os.Remove("hello.dat")
 		start := time.Now()
 		f, err := os.Create("hello.dat")
@@ -229,7 +229,7 @@ func TestWritePerf(t *testing.T) {
 		}
 
 		elapsed := time.Since(start)
-		fmt.Printf("%-20s  %d MB in %d ms, %d MB/s\n",
+		fmt.Printf("%s %d MB in %d ms, %d MB/s\n",
 			t.Name(),
 			N/1024/1024, elapsed.Milliseconds(),
 			int(float64(N)/elapsed.Seconds()/1024/1024),

@@ -1,6 +1,6 @@
-# bio
+# bfile
 
-[![GoDoc](https://godoc.org/github.com/tidwall/bio?status.svg)](https://godoc.org/github.com/tidwall/bio)
+[![GoDoc](https://godoc.org/github.com/tidwall/bfile?status.svg)](https://godoc.org/github.com/tidwall/bfile)
 
 A buffer pool file I/O library for Go.
 
@@ -11,7 +11,7 @@ This is an alternative to using `mmap` on large DBMS like files.
 ## Install
 
 ```
-go get github.com/tidwall/bio
+go get github.com/tidwall/v
 ```
 
 ## Usage
@@ -26,7 +26,7 @@ automatically maintained pool of buffered pages.
 f, err := os.OpenFile("bigfile.dat", os.O_RDWR, 0)
 
 // Create a new Pager for accessing the data in opened file.
-p := bio.NewPager(f)
+p := bfile.NewPager(f)
 
 // Read some data at a specific offset.
 data := make([]byte, 50)
@@ -45,7 +45,7 @@ includes the three functions: `Read`, `Write`, and `Flush`.
 ```go
 
 // Create a new Pager
-p := bio.NewPager(f)
+p := bfile.NewPager(f)
 
 // Create a Stream that is backed by the Pager starting at a specific offset
 s := p.Stream(827364)

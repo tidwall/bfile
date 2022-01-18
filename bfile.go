@@ -1,4 +1,4 @@
-package bio
+package bfile
 
 import (
 	"fmt"
