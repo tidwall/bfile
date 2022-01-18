@@ -149,7 +149,7 @@ func (f *Pager) read(p *page) error {
 
 // incrSize initializes and increases file size to be at least equal to end¸
 // This operation expects that the pager is currently in a RLock state.
-func (f *Pager) incrSize(end int64) error {
+func (f *Pager) incrSize(end int64, write bool) error {
 	f.mu.RUnlock()
 	f.mu.Lock()
 	defer func() {
@@ -163,7 +163,7 @@ func (f *Pager) incrSize(end int64) error {
 		}
 		f.size = fi.Size()
 	}
-	if end > f.size {
+	if write && end > f.size {
 		f.size = end
 	}
 	return nil
@@ -181,10 +181,10 @@ func (f *Pager) io(b []byte, off int64, write bool) (n int, err error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	if end > f.size {
-		if err := f.incrSize(end); err != nil {
+		if err := f.incrSize(end, write); err != nil {
 			return 0, err
 		}
-		if !write {
+		if !write && end > f.size {
 			end = f.size
 			if end-start < 0 {
 				end = start
