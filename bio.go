@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"sync"
+	"sync/atomic"
 )
 
 const (
@@ -319,14 +320,14 @@ func (f *Pager) Stream(off int64) *Stream {
 }
 
 func (s *Stream) Write(p []byte) (n int, err error) {
-	n, err = s.pager.WriteAt(p, s.off)
-	s.off += int64(n)
+	n, err = s.pager.WriteAt(p, atomic.LoadInt64(&s.off))
+	atomic.AddInt64(&s.off, int64(n))
 	return n, err
 }
 
 func (s *Stream) Read(p []byte) (n int, err error) {
-	n, err = s.pager.ReadAt(p, s.off)
-	s.off += int64(n)
+	n, err = s.pager.ReadAt(p, atomic.LoadInt64(&s.off))
+	atomic.AddInt64(&s.off, int64(n))
 	return n, err
 }
 
