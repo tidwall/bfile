@@ -11,7 +11,7 @@ This is an alternative to using `mmap` on large DBMS like files.
 ## Install
 
 ```
-go get github.com/tidwall/v
+go get github.com/tidwall/bfile
 ```
 
 ## Usage
