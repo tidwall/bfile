@@ -170,6 +170,9 @@ func (f *Pager) incrSize(end int64, write bool) error {
 }
 
 func (f *Pager) io(b []byte, off int64, write bool) (n int, err error) {
+	if f == nil {
+		return 0, os.ErrInvalid
+	}
 	eof := false
 	start, end := off, off+int64(len(b))
 	if start < 0 {
@@ -278,6 +281,9 @@ func (f *Pager) pio(b []byte, pnum, pstart, pend int64, write bool,
 
 // Flush writes any unwritten buffered data to the underlying file.
 func (f *Pager) Flush() error {
+	if f == nil {
+		return os.ErrInvalid
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	for i := range f.shards {
@@ -320,17 +326,26 @@ func (f *Pager) Stream(off int64) *Stream {
 }
 
 func (s *Stream) Write(p []byte) (n int, err error) {
+	if s == nil {
+		return 0, os.ErrInvalid
+	}
 	n, err = s.pager.WriteAt(p, atomic.LoadInt64(&s.off))
 	atomic.AddInt64(&s.off, int64(n))
 	return n, err
 }
 
 func (s *Stream) Read(p []byte) (n int, err error) {
+	if s == nil {
+		return 0, os.ErrInvalid
+	}
 	n, err = s.pager.ReadAt(p, atomic.LoadInt64(&s.off))
 	atomic.AddInt64(&s.off, int64(n))
 	return n, err
 }
 
 func (s *Stream) Flush() error {
+	if s == nil {
+		return os.ErrInvalid
+	}
 	return s.pager.Flush()
 }

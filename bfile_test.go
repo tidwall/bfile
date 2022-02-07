@@ -136,7 +136,6 @@ func TestThreads(t *testing.T) {
 					n, err = bf.WriteAt(data, off)
 				}
 				_, _ = n, err
-				// println(f.Pages(), f.pgmax*int64(len(f.shards)))
 			}
 		}(i)
 	}
